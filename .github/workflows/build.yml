@@ -1,0 +1,101 @@
+name: Build EXE
+
+# Push a tag like v1.0.0  -> builds Setup + Portable EXE and publishes a GitHub Release.
+# Actions tab > Build EXE > Run workflow -> builds them as downloadable artifacts only.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  APP_NAME: Ambaan WiFi Guard      # shown to users (Setup, Start menu, messages)
+  APP_ID: AmbaanWiFiGuard          # no spaces: used for EXE / folder names
+  APP_PUBLISHER: Phoenicx
+  APP_URL: https://phoenicx.org
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        shell: pwsh
+        run: |
+          $v = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { "0.0.$env:GITHUB_RUN_NUMBER" }
+          "VERSION=$v" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+
+      - name: Build launcher EXEs (installed + portable)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force build, dist | Out-Null
+          @"
+          static class AppInfo {
+              public const string Name = "$env:APP_NAME";
+              public const string Id = "$env:APP_ID";
+              public const string Version = "$env:VERSION";
+          }
+          "@ | Set-Content build\AppInfo.cs -Encoding utf8
+          @"
+          [assembly: System.Reflection.AssemblyTitle("$env:APP_NAME")]
+          [assembly: System.Reflection.AssemblyProduct("$env:APP_NAME")]
+          [assembly: System.Reflection.AssemblyCompany("$env:APP_PUBLISHER")]
+          [assembly: System.Reflection.AssemblyVersion("$(($env:VERSION -replace '[^0-9.]','').Trim('.')).0")]
+          "@ | Set-Content build\AssemblyInfo.cs -Encoding utf8
+
+          # Pack the app files for the portable EXE
+          Compress-Archive -Path src\* -DestinationPath build\payload.zip -Force
+
+          $fw = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319"
+          $common = @('/nologo', '/optimize+', '/target:winexe', '/platform:anycpu',
+                      '/win32icon:src\assets\ambaan.ico',
+                      '/r:System.Windows.Forms.dll', "/r:$fw\System.IO.Compression.dll", "/r:$fw\System.IO.Compression.FileSystem.dll")
+          $srcs = @('launcher\Launcher.cs', 'build\AppInfo.cs', 'build\AssemblyInfo.cs')
+
+          & "$fw\csc.exe" @common "/out:build\$env:APP_ID.exe" @srcs
+          if ($LASTEXITCODE) { throw 'csc failed (installed build)' }
+          & "$fw\csc.exe" @common '/define:PORTABLE' '/resource:build\payload.zip,payload.zip' "/out:dist\$env:APP_ID-Portable-$env:VERSION.exe" @srcs
+          if ($LASTEXITCODE) { throw 'csc failed (portable build)' }
+
+      - name: Build Setup EXE (Inno Setup)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; }
+          & $iscc "/DAppName=$env:APP_NAME" "/DAppId=$env:APP_ID" "/DAppVersion=$env:VERSION" "/DAppPublisher=$env:APP_PUBLISHER" "/DAppUrl=$env:APP_URL" installer\setup.iss
+          if ($LASTEXITCODE) { throw 'Inno Setup failed' }
+
+      - name: Portable ZIP (folder version, for people who prefer it)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force build\zip | Out-Null
+          Copy-Item src\* build\zip -Recurse
+          Compress-Archive -Path build\zip\* -DestinationPath "dist\$env:APP_ID-Scripts-$env:VERSION.zip" -Force
+          Get-ChildItem dist | Format-Table Name, Length
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_ID }}-${{ env.VERSION }}
+          path: dist/*
+
+      - name: Publish GitHub Release
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $notes = @"
+          **$env:APP_NAME $env:VERSION**
+
+          - **$env:APP_ID-Setup-$env:VERSION.exe** - installs for your user (no admin), adds Start menu shortcuts.
+          - **$env:APP_ID-Portable-$env:VERSION.exe** - single EXE, no install. Keeps its data in a ``$env:APP_ID-data`` folder next to it.
+          - **$env:APP_ID-Scripts-$env:VERSION.zip** - the plain PowerShell scripts (run Start-Floating-Widget.bat).
+
+          Windows may show "Windows protected your PC" because the EXE is not code-signed: click **More info > Run anyway**.
+          "@
+          gh release create $env:GITHUB_REF_NAME (Get-ChildItem dist\*).FullName --title "$env:APP_NAME $env:VERSION" --notes $notes
