@@ -105,10 +105,16 @@ jobs:
           "----- App.log -----"
           Get-Content smoke\AmbaanWiFiGuard-data\MonitorData\App.log -ErrorAction SilentlyContinue
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: screenshots
-          path: shots/*
+      - name: Save screenshots to the ci-screenshots branch
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          Copy-Item smoke\AmbaanWiFiGuard-data\MonitorData\App.log shots\App.log -ErrorAction SilentlyContinue
+          Set-Location shots
+          git init -q -b ci-screenshots
+          git -c user.name=ci -c user.email=ci@example.com add -A
+          git -c user.name=ci -c user.email=ci@example.com commit -qm "screenshots $env:VERSION"
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-screenshots
 
       - uses: actions/upload-artifact@v4
         with:

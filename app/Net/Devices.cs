@@ -209,6 +209,7 @@ namespace Ambaan
                 try
                 {
                     var t = Dns.GetHostEntryAsync(job[1]);
+                    t.ContinueWith(x => { var ignored = x.Exception; }, TaskContinuationOptions.OnlyOnFaulted);
                     if (t.Wait(2000) && t.Result != null && !string.IsNullOrEmpty(t.Result.HostName) && t.Result.HostName != job[1])
                     {
                         name = t.Result.HostName;
