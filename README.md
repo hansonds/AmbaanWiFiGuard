@@ -36,8 +36,9 @@ The EXEs are not code-signed, so Windows may say "Windows protected your PC". Cl
 
 GitHub Actions builds everything (`.github/workflows/build.yml`):
 
-- Push a tag like `v1.0.0`: it builds the Setup EXE, Portable EXE and ZIP and publishes a Release.
-- **Actions > Build EXE > Run workflow**: test build, files under the run's Artifacts.
+- **Actions > Build EXE > Run workflow**, type a version like `1.0.1`: builds the Setup EXE, Portable EXE and ZIP and publishes a Release.
+- Same, with the version left empty: test build, files under the run's Artifacts.
+- Pushing a tag like `v1.0.1` also publishes a Release.
 
 To rename the app, change `APP_NAME` and `APP_ID` at the top of the workflow.
 
