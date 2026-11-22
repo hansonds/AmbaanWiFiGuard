@@ -46,11 +46,9 @@ jobs:
           # Wireshark's public list of network card makers. Packed into the EXE so lookups work offline.
           Invoke-WebRequest 'https://www.wireshark.org/download/automated/data/manuf' -UseBasicParsing -TimeoutSec 60 -OutFile manuf.txt
           $raw = [IO.File]::ReadAllText("$PWD\manuf.txt")
-          "Downloaded bytes: " + (Get-Item manuf.txt).Length
-          Get-Content manuf.txt -TotalCount 400 | Select-Object -Last 4 | ForEach-Object { "SAMPLE: " + ($_ -replace "`t", ' <TAB> ') }
           $sb = [System.Text.StringBuilder]::new()
           foreach ($line in $raw -split "`n") {
-            if ($line -match '^([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2})\t([^\t]+)(?:\t([^\r\n]+))?') {
+            if ($line -match '^([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2})\s*\t\s*([^\t\r]+?)\s*(?:\t\s*([^\r\n]+?))?\s*$') {
               $name = if ($Matches[5]) { $Matches[5].Trim() } else { $Matches[4].Trim() }
               [void]$sb.Append(($Matches[1] + $Matches[2] + $Matches[3]).ToUpper() + "`t" + $name + "`n")
             }
