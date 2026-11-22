@@ -205,15 +205,20 @@ $Col = @{
     Top = C '#16133A'; Bottom = C '#2C2468'; Text = C '#F5F3FF'; Muted = C '#A9A3D9'
     Sky = C '#8EC5FF'; Lilac = C '#C9A7FF'; Green = C '#7CE8B8'; Amber = C '#FFD27A'; Red = C '#FF9C9C'
 }
+# Windows display scaling (100% = 1.0, 125% = 1.25, 150% = 1.5). All drawing is done in 100% units and scaled by $S,
+# so text and boxes grow together instead of the text overflowing its box.
+$S = 1.0
+try { $dg = [Drawing.Graphics]::FromHwnd([IntPtr]::Zero); $S = [math]::Max(1.0, [double]$dg.DpiX / 96.0); $dg.Dispose() } catch {}
+function New-PxFont([string]$name, [double]$pt) { New-Object Drawing.Font($name, [single]($pt * 96 / 72), [Drawing.FontStyle]::Regular, [Drawing.GraphicsUnit]::Pixel) }
 $Font = @{
-    Title = New-Object Drawing.Font('Segoe UI Semibold', 11)
-    Big   = New-Object Drawing.Font('Segoe UI Semibold', 17)
-    Gauge = New-Object Drawing.Font('Segoe UI Semibold', 15)
-    Body  = New-Object Drawing.Font('Segoe UI', 9)
-    Bold  = New-Object Drawing.Font('Segoe UI Semibold', 9.5)
-    Small = New-Object Drawing.Font('Segoe UI', 8)
-    Tiny  = New-Object Drawing.Font('Segoe UI Semibold', 7.5)
-    Icon  = New-Object Drawing.Font('Segoe UI Symbol', 10)
+    Title = New-PxFont 'Segoe UI Semibold' 11
+    Big   = New-PxFont 'Segoe UI Semibold' 17
+    Gauge = New-PxFont 'Segoe UI Semibold' 15
+    Body  = New-PxFont 'Segoe UI' 9
+    Bold  = New-PxFont 'Segoe UI Semibold' 9.5
+    Small = New-PxFont 'Segoe UI' 8
+    Tiny  = New-PxFont 'Segoe UI Semibold' 7.5
+    Icon  = New-PxFont 'Segoe UI Symbol' 10
 }
 $W = 340; $HCompact = 122; $HExpanded = 660
 $Margin = 14
@@ -477,8 +482,21 @@ function Start-Watcher {
 
 # ---------- dialogs ----------
 function Style-Dialog($f, [int]$w, [int]$h, [string]$title) {
+    $f.AutoScaleMode = 'None'
     $f.Text = $title; $f.Size = New-Object Drawing.Size($w, $h); $f.FormBorderStyle = 'FixedToolWindow'
     $f.StartPosition = 'CenterScreen'; $f.TopMost = $true; $f.BackColor = $Col.Top; $f.ForeColor = $Col.Text; $f.Font = $Font.Body
+}
+function Set-DialogScale($f) {
+    # Layout is written for 100% scaling: grow sizes, positions and fonts by the display scale.
+    $fix = {
+        param($c)
+        $fo = $c.Font
+        $px = if ($fo.Unit -eq [Drawing.GraphicsUnit]::Pixel) { $fo.Size } else { $fo.SizeInPoints * 96 / 72 }
+        $c.Font = New-Object Drawing.Font($fo.FontFamily, [single]($px * $S), $fo.Style, [Drawing.GraphicsUnit]::Pixel)
+        foreach ($k in $c.Controls) { & $fix $k }
+    }
+    & $fix $f
+    if ($S -ne 1.0) { $f.Scale((New-Object Drawing.SizeF([single]$S, [single]$S))) }
 }
 function New-DlgButton([string]$t, $x, $y, $w, $color) {
     $b = New-Object Windows.Forms.Button; $b.Text = $t; $b.Location = New-Object Drawing.Point($x, $y); $b.Size = New-Object Drawing.Size($w, 32)
@@ -565,6 +583,7 @@ function Show-Settings {
     $rs.Add_Click({ & $load $Defaults })
     $f.AcceptButton = $ok; $f.CancelButton = $cn
     $f.Controls.AddRange(@($now, $hAlerts, $l1, $slow, $u1, $l2, $fast, $u2, $l3, $mode, $l4, $every, $hint, $hOther, $l5, $char, $pv, $auto, $voice, $all, $ok, $rs, $cn))
+    Set-DialogScale $f
     $res = if ($form.Visible) { $f.ShowDialog($form) } else { $f.ShowDialog() }
     if ($res -eq 'OK') {
         $oldEvery = Get-SpeedEvery
@@ -597,6 +616,7 @@ function Show-Rename($dev) {
     $f.AcceptButton = $ok; $f.CancelButton = $cn
     $f.Controls.AddRange(@($l, $t, $ok, $clr, $fg, $cn))
     $f.Add_Shown({ $t.Focus(); $t.SelectAll() })
+    Set-DialogScale $f
     $res = $f.ShowDialog($form); $val = $t.Text.Trim(); $f.Dispose()
     if ($res -eq 'OK' -and $val) { $script:Known[$dev.MAC] = $val }
     elseif ($res -eq 'Retry') { $script:Known[$dev.MAC] = $Unnamed }
@@ -627,6 +647,7 @@ function Show-DnsFix {
     $cn = New-DlgButton 'Cancel' 144 300 100 (C '#3A3270'); $cn.DialogResult = 'Cancel'
     $f.AcceptButton = $ok; $f.CancelButton = $cn
     $f.Controls.AddRange(@($info, $r1, $r2, $r3, $note, $ok, $cn))
+    Set-DialogScale $f
     $res = $f.ShowDialog($form)
     $choice = if ($r1.Checked) { 1 } elseif ($r2.Checked) { 2 } else { 3 }
     $f.Dispose()
@@ -663,7 +684,7 @@ $script:PopKind = 'New'
 $script:PopHover = $null
 $script:PopHits = New-Object System.Collections.Generic.List[object]
 $PopW = 300; $PopH = 332                         # layout size (all drawing uses these units)
-$PS = 0.78                                        # on-screen scale of the alert popup: 1.0 = original, smaller = smaller
+$PS = 0.78 * $S                                   # on-screen scale of the alert popup: 1.0 = original, smaller = smaller
 $PopWs = [int]($PopW * $PS); $PopHs = [int]($PopH * $PS)
 $PopCardTop = 172                                   # character (y 38-205) overlaps the card top by ~33 px
 $SeeThrough = [Drawing.Color]::FromArgb(255, 1, 0, 1)     # near-black key: resized edge pixels blend into the dark outline, not a coloured fringe
@@ -1084,14 +1105,15 @@ $form = New-Object WifiWidget.SmoothForm
 $form.Text = 'Wi-Fi Analyzer Pro'
 $form.BackColor = $Col.Top
 $form.Opacity = 0.0
-$form.ClientSize = New-Object Drawing.Size($W, $(if ($script:Cfg.Expanded) { $HExpanded } else { $HCompact }))
+$form.ClientSize = New-Object Drawing.Size([int]($W * $S), [int]($(if ($script:Cfg.Expanded) { $HExpanded } else { $HCompact }) * $S))
 
 function Get-CornerPoint([int]$h) {
     $wa = [Windows.Forms.Screen]::PrimaryScreen.WorkingArea
     if ($null -ne $script:Cfg.ScreenX) { $wa = [Windows.Forms.Screen]::FromPoint((New-Object Drawing.Point($script:Cfg.ScreenX, $script:Cfg.ScreenY))).WorkingArea }
-    $x = if ($script:Cfg.Corner -like '*Left') { $wa.Left + $Margin } else { $wa.Right - $W - $Margin }
-    $y = if ($script:Cfg.Corner -like 'Top*') { $wa.Top + $Margin } else { $wa.Bottom - $h - $Margin }
-    return New-Object Drawing.Point($x, $y)
+    $m = [int]($Margin * $S)
+    $x = if ($script:Cfg.Corner -like '*Left') { $wa.Left + $m } else { $wa.Right - $form.Width - $m }
+    $y = if ($script:Cfg.Corner -like 'Top*') { $wa.Top + $m } else { $wa.Bottom - $h - $m }
+    return New-Object Drawing.Point([int]$x, [int]$y)
 }
 $script:Slide = $null
 $script:Fade = 0
@@ -1103,7 +1125,7 @@ function Move-ToCorner([bool]$animate = $true) {
 }
 function Set-Expanded([bool]$on) {
     $script:Cfg.Expanded = $on; Save-Settings
-    $form.ClientSize = New-Object Drawing.Size($W, $(if ($on) { $HExpanded } else { $HCompact }))
+    $form.ClientSize = New-Object Drawing.Size([int]($W * $S), [int]($(if ($on) { $HExpanded } else { $HCompact }) * $S))
     Move-ToCorner $false
     if ($on -and -not $script:Dns) { Request-Dns }
     $form.Invalidate()
@@ -1117,7 +1139,8 @@ $form.Add_Paint({
     param($s, $e)
     $g = $e.Graphics
     $g.SmoothingMode = 'AntiAlias'; $g.TextRenderingHint = 'ClearTypeGridFit'
-    $w = $form.ClientSize.Width; $h = $form.ClientSize.Height
+    $g.ScaleTransform([single]$S, [single]$S)          # draw in 100% units
+    $w = $W; $h = [math]::Round($form.ClientSize.Height / $S)
     $script:Hits.Clear()
 
     # background: indigo gradient + two soft glows
@@ -1290,7 +1313,7 @@ $form.Add_Paint({
 })
 
 # ---------- mouse ----------
-function Find-Hit($pt) { foreach ($h in $script:Hits) { if ($h.Rect.Contains([single]$pt.X, [single]$pt.Y)) { return $h } }; return $null }
+function Find-Hit($pt) { foreach ($h in $script:Hits) { if ($h.Rect.Contains([single]($pt.X / $S), [single]($pt.Y / $S))) { return $h } }; return $null }
 $form.Add_MouseMove({
     param($s, $e)
     if ($script:Drag) {
@@ -1383,7 +1406,7 @@ $animTimer = New-Object Windows.Forms.Timer; $animTimer.Interval = 15
 $animTimer.Add_Tick({
     $busy = $false
     if ($script:Fade -eq 1) {
-        $form.Opacity = [math]::Min(0.97, $form.Opacity + 0.12); if ($form.Opacity -ge 0.97) { $script:Fade = 0 } else { $busy = $true }
+        $form.Opacity = [math]::Min(1.0, $form.Opacity + 0.12); if ($form.Opacity -ge 1.0) { $script:Fade = 0 } else { $busy = $true }
     } elseif ($script:Fade -eq -1) {
         $form.Opacity = [math]::Max(0, $form.Opacity - 0.14)
         if ($form.Opacity -le 0) { $script:Fade = 0; $form.Hide() } else { $busy = $true }
