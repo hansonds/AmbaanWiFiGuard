@@ -1,0 +1,164 @@
+<Window x:Class="Ambaan.WidgetWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Ambaan"
+        Title="Ambaan WiFi Guard" Width="352" SizeToContent="Height"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" ShowInTaskbar="False" Topmost="True" ShowActivated="False"
+        FontFamily="Segoe UI" Foreground="{StaticResource Text}" UseLayoutRounding="True" Opacity="0">
+    <Border x:Name="Shell" Style="{StaticResource GlassShell}">
+        <Grid>
+            <!-- soft shine on the top half, like light on glass -->
+            <Border CornerRadius="18,18,0,0" Height="90" VerticalAlignment="Top" Background="{StaticResource Shine}" IsHitTestVisible="False"/>
+            <StackPanel Margin="16,8,16,14">
+                <!-- title bar -->
+                <DockPanel Margin="0,0,-8,2">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button x:Name="BtnSpeed" Style="{StaticResource IconBtn}" Content="&#xE945;" ToolTip="Speed test now"/>
+                        <Button x:Name="BtnHistory" Style="{StaticResource IconBtn}" Content="&#xE9D2;" ToolTip="History and tools"/>
+                        <Button x:Name="BtnSettings" Style="{StaticResource IconBtn}" Content="&#xE713;" ToolTip="Settings"/>
+                        <Button x:Name="BtnExpand" Style="{StaticResource IconBtn}" Content="&#xE70D;" ToolTip="Show more"/>
+                        <Button x:Name="BtnHide" Style="{StaticResource IconBtn}" Content="&#xE921;" ToolTip="Hide (Ctrl+Alt+W)"/>
+                        <Button x:Name="BtnClose" Style="{StaticResource IconBtn}" Content="&#xE8BB;" ToolTip="Close Ambaan"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Image x:Name="Logo" Width="16" Height="16" Margin="0,0,6,0"/>
+                        <TextBlock Text="AMBAAN" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource Muted}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </DockPanel>
+
+                <!-- signal gauge + network -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="90"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid Width="86" Height="86" VerticalAlignment="Top">
+                        <Path x:Name="GaugeTrack" Stroke="#24FFFFFF" StrokeThickness="8" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                        <Path x:Name="GaugeValue" StrokeThickness="8" StrokeStartLineCap="Round" StrokeEndLineCap="Round">
+                            <Path.Stroke>
+                                <LinearGradientBrush StartPoint="0,1" EndPoint="1,0">
+                                    <GradientStop Color="#8EC5FF" Offset="0"/>
+                                    <GradientStop Color="#C9A7FF" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Path.Stroke>
+                        </Path>
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,4,0,0">
+                            <TextBlock x:Name="GaugeText" Text="--" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="GaugeSub" Text="signal" FontSize="10.5" Foreground="{StaticResource Muted}" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                    <StackPanel Grid.Column="1" Margin="8,2,0,0">
+                        <TextBlock x:Name="Ssid" Text="Wi-Fi" FontSize="16" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock x:Name="BandText" Text="" FontSize="11" Foreground="{StaticResource Muted}" TextTrimming="CharacterEllipsis" Margin="0,1,0,0"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <TextBlock Text="&#x2193;" FontSize="18" Foreground="{StaticResource Sky}" FontWeight="SemiBold" VerticalAlignment="Bottom"/>
+                            <TextBlock x:Name="DownText" Text="0.0" FontSize="20" Foreground="{StaticResource Sky}" FontWeight="SemiBold" Margin="2,0,10,0" VerticalAlignment="Bottom"/>
+                            <TextBlock Text="&#x2191;" FontSize="18" Foreground="{StaticResource Lilac}" FontWeight="SemiBold" VerticalAlignment="Bottom"/>
+                            <TextBlock x:Name="UpText" Text="0.0" FontSize="20" Foreground="{StaticResource Lilac}" FontWeight="SemiBold" Margin="2,0,6,0" VerticalAlignment="Bottom"/>
+                            <TextBlock Text="Mbps" FontSize="10.5" Foreground="{StaticResource Muted}" Margin="0,0,0,4" VerticalAlignment="Bottom"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+
+                <!-- status chips: they wrap instead of getting cut -->
+                <WrapPanel Margin="0,8,0,0">
+                    <Border x:Name="ChipRouter" CornerRadius="10" Padding="9,3" Margin="0,0,6,4"><TextBlock x:Name="ChipRouterText" FontSize="11" FontWeight="SemiBold" Text="Router --"/></Border>
+                    <Border x:Name="ChipNet" CornerRadius="10" Padding="9,3" Margin="0,0,6,4"><TextBlock x:Name="ChipNetText" FontSize="11" FontWeight="SemiBold" Text="Internet --"/></Border>
+                    <Border x:Name="ChipDevices" CornerRadius="10" Padding="9,3" Margin="0,0,6,4" Cursor="Hand"><TextBlock x:Name="ChipDevicesText" FontSize="11" FontWeight="SemiBold" Text="Devices ..."/></Border>
+                    <Border x:Name="ChipDns" CornerRadius="10" Padding="9,3" Margin="0,0,6,4" Cursor="Hand"><TextBlock x:Name="ChipDnsText" FontSize="11" FontWeight="SemiBold" Text="DNS ..."/></Border>
+                </WrapPanel>
+
+                <!-- ===== expanded ===== -->
+                <StackPanel x:Name="More" Visibility="Collapsed">
+                    <Border Style="{StaticResource Card}" Margin="0,6,0,0" Padding="12,8,12,6">
+                        <StackPanel>
+                            <DockPanel>
+                                <TextBlock x:Name="PeakText" DockPanel.Dock="Right" Style="{StaticResource Label}" Text="peak 0 Mbps"/>
+                                <TextBlock Style="{StaticResource Label}" Text="LIVE TRAFFIC · LAST 2 MIN"/>
+                            </DockPanel>
+                            <local:ChartView x:Name="Traffic" Height="54" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <UniformGrid Columns="3" Margin="0,8,0,0">
+                        <Border Style="{StaticResource Card}" Margin="0,0,4,0"><StackPanel><TextBlock Style="{StaticResource Label}" Text="ROUTER"/><TextBlock x:Name="TileRouter" FontSize="14" FontWeight="SemiBold" Text="--" TextTrimming="CharacterEllipsis"/></StackPanel></Border>
+                        <Border Style="{StaticResource Card}" Margin="4,0,4,0"><StackPanel><TextBlock Style="{StaticResource Label}" Text="INTERNET"/><TextBlock x:Name="TileNet" FontSize="14" FontWeight="SemiBold" Text="--" TextTrimming="CharacterEllipsis"/></StackPanel></Border>
+                        <Border x:Name="TileSpeedCard" Style="{StaticResource Card}" Margin="4,0,0,0" Cursor="Hand" ToolTip="Click to test now"><StackPanel><TextBlock x:Name="TileSpeedLabel" Style="{StaticResource Label}" Text="SPEED"/><TextBlock x:Name="TileSpeed" FontSize="14" FontWeight="SemiBold" Text="soon..." TextTrimming="CharacterEllipsis"/></StackPanel></Border>
+                    </UniformGrid>
+                    <UniformGrid Columns="3" Margin="0,8,0,0">
+                        <Border Style="{StaticResource Card}" Margin="0,0,4,0"><StackPanel><TextBlock Style="{StaticResource Label}" Text="DATA TODAY"/><TextBlock x:Name="TileData" FontSize="14" FontWeight="SemiBold" Text="--" TextTrimming="CharacterEllipsis"/></StackPanel></Border>
+                        <Border Style="{StaticResource Card}" Margin="4,0,4,0"><StackPanel><TextBlock Style="{StaticResource Label}" Text="UPTIME TODAY"/><TextBlock x:Name="TileUptime" FontSize="14" FontWeight="SemiBold" Text="--" TextTrimming="CharacterEllipsis"/></StackPanel></Border>
+                        <Border Style="{StaticResource Card}" Margin="4,0,0,0"><StackPanel><TextBlock Style="{StaticResource Label}" Text="OUTAGES"/><TextBlock x:Name="TileOutages" FontSize="14" FontWeight="SemiBold" Text="0 today" TextTrimming="CharacterEllipsis"/></StackPanel></Border>
+                    </UniformGrid>
+
+                    <Border x:Name="LocationHint" Style="{StaticResource Card}" Margin="0,8,0,0" Background="#26FFD27A" Visibility="Collapsed">
+                        <DockPanel>
+                            <Button x:Name="BtnLocation" DockPanel.Dock="Right" Style="{StaticResource LinkBtn}" Content="Open settings" VerticalAlignment="Center"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="11.5" Text="Windows hides the Wi-Fi name and nearby networks until Location is on for desktop apps."/>
+                        </DockPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Margin="0,8,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <DockPanel>
+                                    <TextBlock x:Name="DnsChecked" DockPanel.Dock="Right" Style="{StaticResource Label}" Text=""/>
+                                    <TextBlock Style="{StaticResource Label}" Text="DNS SHIELD"/>
+                                </DockPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                    <Ellipse x:Name="DnsDot" Width="9" Height="9" Fill="{StaticResource Muted}" Margin="0,0,7,0" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="DnsHead" FontSize="13" FontWeight="SemiBold" Text="Checking DNS..." TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                                <TextBlock x:Name="DnsDetail" FontSize="11" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,3,8,0" MaxHeight="45" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                <Button x:Name="BtnDnsFix" Style="{StaticResource Pill}" Content="Fix it" Height="30" Background="#50C9A7FF"/>
+                                <Button x:Name="BtnDnsCheck" Style="{StaticResource Pill}" Content="&#xE72C;" FontFamily="Segoe MDL2 Assets" Height="30" Padding="10,0" Margin="6,0,0,0" Background="#408EC5FF" ToolTip="Check again"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <DockPanel Margin="2,12,0,6">
+                        <Button x:Name="BtnScan" DockPanel.Dock="Right" Style="{StaticResource LinkBtn}" Content="Scan now"/>
+                        <TextBlock x:Name="DevHeader" Style="{StaticResource Label}" Text="DEVICES" VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <ScrollViewer x:Name="DevScroll" MaxHeight="232" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,-6,0" Padding="0,0,6,0">
+                        <ScrollViewer.Resources>
+                            <Style TargetType="ScrollBar" BasedOn="{StaticResource SlimScroll}"/>
+                        </ScrollViewer.Resources>
+                        <ItemsControl x:Name="DeviceList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource RowCard}" Opacity="{Binding RowOpacity}" MouseLeftButtonUp="DeviceRow_Click" ToolTip="Click to name, forget or block">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="18"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Ellipse Width="9" Height="9" Fill="{Binding Dot}" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="{Binding Title}" FontSize="12.5" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding Sub}" FontSize="10.5" Foreground="{StaticResource Muted}" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2" Text="{Binding Tag}" Foreground="{Binding TagBrush}" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                    <TextBlock x:Name="NoDevices" Text="Looking for devices..." FontSize="12" Foreground="{StaticResource Muted}" Margin="2,4,0,0" Visibility="Collapsed"/>
+
+                    <UniformGrid Columns="3" Margin="0,12,0,0">
+                        <Button x:Name="BtnSpeed2" Style="{StaticResource Pill}" Content="Speed test" Background="#507CE8B8" Margin="0,0,4,0"/>
+                        <Button x:Name="BtnFull" Style="{StaticResource Pill}" Content="Full test" Background="#50C9A7FF" Margin="4,0,4,0"/>
+                        <Button x:Name="BtnHistory2" Style="{StaticResource Pill}" Content="History" Background="#508EC5FF" Margin="4,0,0,0"/>
+                    </UniformGrid>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>
