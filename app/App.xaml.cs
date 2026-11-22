@@ -75,6 +75,27 @@ namespace Ambaan
             else Engine.I.Start();
 
             if (analyzer) FullTestWindow.Open();
+
+            // for automatic screenshots in the build: --show=settings|history|alert-new|alert-slow|alert-fast|fulltest|about
+            var show = e.Args.FirstOrDefault(a => a.StartsWith("--show="));
+            if (show != null)
+            {
+                var t2 = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
+                t2.Tick += (s, ev) =>
+                {
+                    t2.Stop();
+                    switch (show.Substring(7))
+                    {
+                        case "settings": SettingsWindow.Open(); break;
+                        case "history": HistoryWindow.Open(); break;
+                        case "fulltest": FullTestWindow.Open(); break;
+                        case "alert-new": AlertWindow.Pop("New", Engine.I.Book.Devices.Select(d => d.Mac).FirstOrDefault() ?? "AA-BB-CC-DD-EE-FF", true); break;
+                        case "alert-slow": Engine.I.Speed.Last = 3.2; Engine.I.Speed.Diag = "Weak Wi-Fi signal (31%). Move closer to the router or switch to 5 GHz."; AlertWindow.Pop("Slow", null, true, "Dhamu"); break;
+                        case "alert-fast": Engine.I.Speed.Last = 92.4; Engine.I.Speed.Diag = "Signal 88%  ·  router 3 ms  ·  internet 21 ms  ·  tested over Wi-Fi"; AlertWindow.Pop("Fast", null, true); break;
+                    }
+                };
+                t2.Start();
+            }
         }
 
         public static void Quit()
