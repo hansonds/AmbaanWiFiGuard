@@ -20,9 +20,9 @@
             <GradientStop Color="#C02A2163" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="GlassFillSolid" StartPoint="0,0" EndPoint="0.8,1">
-            <GradientStop Color="#F2221C4E" Offset="0"/>
-            <GradientStop Color="#F2181538" Offset="0.55"/>
-            <GradientStop Color="#F62A2163" Offset="1"/>
+            <GradientStop Color="#FA221C4E" Offset="0"/>
+            <GradientStop Color="#FA181538" Offset="0.55"/>
+            <GradientStop Color="#FC2A2163" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="GlassEdge" StartPoint="0,0" EndPoint="0,1">
             <GradientStop Color="#70FFFFFF" Offset="0"/>

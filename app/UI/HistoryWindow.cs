@@ -21,7 +21,7 @@ namespace Ambaan
         {
             if (open != null) { open.Activate(); return; }
             StackPanel body;
-            var w = Ui.Dialog("History and tools", 620, out body, false);
+            var w = Ui.Dialog("History and tools", 620, out body, true);
             open = w; w.Closed += (s, e) => open = null;
 
             var tabs = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 12) };
@@ -238,7 +238,7 @@ namespace Ambaan
         {
             if (open != null) { open.Activate(); return; }
             StackPanel body;
-            var w = Ui.Dialog("Full Wi-Fi test", 560, out body, false);
+            var w = Ui.Dialog("Full Wi-Fi test", 560, out body, true);
             open = w; w.Closed += (s, e) => open = null;
             var status = Ui.Text("Ready. The test takes about a minute and downloads ~25 MB.", 13, null, true, true);
             var bar = new ProgressBar { IsIndeterminate = false, Height = 4, Margin = new Thickness(0, 8, 0, 0), Foreground = Ui.B("#8EC5FF"), Background = Ui.B("#20FFFFFF"), BorderThickness = new Thickness(0) };
