@@ -20,6 +20,7 @@
     <NoWarn>CS0618;CS0649;CS0169;CS0414;CS1998;CS4014</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="System.Web" />
     <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Net.Http" />
   </ItemGroup>
