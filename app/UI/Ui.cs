@@ -71,7 +71,7 @@ namespace Ambaan
             return new TextBox
             {
                 Text = text, Width = width, FontSize = 13, Padding = new Thickness(6, 4, 6, 4), Background = B("#22FFFFFF"),
-                Foreground = B("#F7F5FF"), BorderBrush = B("#44FFFFFF"), CaretBrush = B("#FFFFFF"), VerticalContentAlignment = VerticalAlignment.Center
+                Foreground = B("#F2F5F9"), BorderBrush = B("#44FFFFFF"), CaretBrush = B("#FFFFFF"), VerticalContentAlignment = VerticalAlignment.Center
             };
         }
 
@@ -85,7 +85,7 @@ namespace Ambaan
 
         public static CheckBox Check(string text, bool on)
         {
-            return new CheckBox { Content = text, IsChecked = on, Foreground = B("#F7F5FF"), FontSize = 12.5, Margin = new Thickness(0, 6, 0, 0), VerticalContentAlignment = VerticalAlignment.Center };
+            return new CheckBox { Content = text, IsChecked = on, Foreground = B("#F2F5F9"), FontSize = 12.5, Margin = new Thickness(0, 6, 0, 0), VerticalContentAlignment = VerticalAlignment.Center };
         }
 
         public static Grid Row(UIElement left, UIElement right, double top = 8)
@@ -113,7 +113,7 @@ namespace Ambaan
             {
                 Title = title, Width = width, SizeToContent = SizeToContent.Height, WindowStyle = WindowStyle.None, AllowsTransparency = true,
                 Background = Brushes.Transparent, ResizeMode = ResizeMode.NoResize, Topmost = topmost, WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                ShowInTaskbar = true, FontFamily = new FontFamily("Segoe UI"), Foreground = B("#F7F5FF"), UseLayoutRounding = true
+                ShowInTaskbar = true, FontFamily = new FontFamily("Segoe UI Variable Text, Segoe UI"), Foreground = B("#F2F5F9"), UseLayoutRounding = true
             };
             w.Icon = AppIcon;
             var shell = new Border { Style = Res<Style>("GlassShell"), Background = Res<Brush>("GlassFillSolid"), Margin = new Thickness(14) };
@@ -140,7 +140,7 @@ namespace Ambaan
             StackPanel body;
             var w = Dialog(title, 420, out body);
             body.Children.Add(Text(text, 13, null, false, true));
-            body.Children.Add(Buttons(Btn("OK", "#605B4BC4", () => w.Close())));
+            body.Children.Add(Buttons(Btn("OK", "#D01A73B8", () => w.Close())));
             w.ShowDialog();
         }
 
@@ -149,14 +149,19 @@ namespace Ambaan
             StackPanel body; bool ok = false;
             var w = Dialog(title, 420, out body);
             body.Children.Add(Text(text, 13, null, false, true));
-            body.Children.Add(Buttons(Btn(yes, "#605B4BC4", () => { ok = true; w.Close(); }), Btn("Cancel", "#303A3270", () => w.Close())));
+            body.Children.Add(Buttons(Btn(yes, "#D01A73B8", () => { ok = true; w.Close(); }), Btn("Cancel", "#1FFFFFFF", () => w.Close())));
             w.ShowDialog();
             return ok;
         }
 
         public static void Open(string target)
         {
-            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(target) { UseShellExecute = true }); }
+            try
+            {
+                if (DnsGuard.IsAdmin)   // admin copy: let Explorer open it, so the browser does not run as admin
+                    System.Diagnostics.Process.Start(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe"), "\"" + target + "\"");
+                else System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(target) { UseShellExecute = true });
+            }
             catch (Exception ex) { Log.Error("open " + target, ex); }
         }
 
@@ -306,7 +311,7 @@ namespace Ambaan
             double w = ActualWidth, h = ActualHeight;
             if (w < 20 || h < 20) return;
             dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, w, h));
-            var tf = new Typeface("Segoe UI");
+            var tf = new Typeface("Segoe UI Variable Text, Segoe UI");
             double dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
             double l = ShowAxis ? 34 : 0, r = 4, t = 6, b = (ShowAxis && XLabels != null) ? 18 : 4;
             double cw = w - l - r, ch = h - t - b;

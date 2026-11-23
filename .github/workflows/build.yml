@@ -93,7 +93,7 @@ jobs:
             $g = [System.Drawing.Graphics]::FromImage($bmp); $g.CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
             $bmp.Save("shots\$name.png"); $g.Dispose(); $bmp.Dispose()
           }
-          foreach ($v in 'widget', 'alert-new', 'alert-slow', 'alert-fast', 'settings', 'history') {
+          foreach ($v in 'widget', 'alert-new', 'alert-slow', 'settings', 'history', 'dns', 'network') {
             $arg = if ($v -eq 'widget') { '' } else { "--show=$v" }
             $p = Start-Process smoke\AmbaanWiFiGuard.exe -ArgumentList $arg -PassThru
             Start-Sleep -Seconds 14

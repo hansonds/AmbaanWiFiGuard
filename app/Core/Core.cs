@@ -240,6 +240,15 @@ namespace Ambaan
         public double? ScreenX, ScreenY;
         public string LastFastDay = "";
         public bool AutoStartAsked = false;
+        // DNS Guard (from SilentDNS)
+        public bool DnsGuard = false;
+        public string DnsPreset = "Cloudflare Security";
+        public string DnsP4 = "1.1.1.2", DnsS4 = "1.0.0.2", DnsP6 = "2606:4700:4700::1112", DnsS6 = "2606:4700:4700::1002";
+        public bool DnsEncrypted = true;
+        // data limits (GB, 0 = off)
+        public double MonthCapGB = 0, DayCapGB = 0;
+        public string CapAlerts = "";
+        public bool TrayHintShown = false;
 
         static string FilePath => Path.Combine(Paths.Data, "WidgetSettings.json");
 
@@ -266,6 +275,14 @@ namespace Ambaan
             if (d.ContainsKey("ScreenX") && d["ScreenX"] != null) { s.ScreenX = Json.Num(d, "ScreenX", 0); s.ScreenY = Json.Num(d, "ScreenY", 0); }
             s.LastFastDay = Json.Str(d, "LastFastDay", "");
             s.AutoStartAsked = Json.Bool(d, "AutoStartAsked", false);
+            s.DnsGuard = Json.Bool(d, "DnsGuard", false);
+            s.DnsPreset = Json.Str(d, "DnsPreset", s.DnsPreset);
+            s.DnsP4 = Json.Str(d, "DnsP4", s.DnsP4); s.DnsS4 = Json.Str(d, "DnsS4", s.DnsS4);
+            s.DnsP6 = Json.Str(d, "DnsP6", s.DnsP6); s.DnsS6 = Json.Str(d, "DnsS6", s.DnsS6);
+            s.DnsEncrypted = Json.Bool(d, "DnsEncrypted", true);
+            s.MonthCapGB = Json.Num(d, "MonthCapGB", 0); s.DayCapGB = Json.Num(d, "DayCapGB", 0);
+            s.CapAlerts = Json.Str(d, "CapAlerts", "");
+            s.TrayHintShown = Json.Bool(d, "TrayHintShown", false);
             s.Fix();
             return s;
         }
@@ -288,7 +305,9 @@ namespace Ambaan
                 ["SpeedEvery"] = SpeedEvery, ["AlertAll"] = AlertAll, ["Voice"] = Voice, ["Volume"] = Volume,
                 ["Character"] = Character, ["QuietHours"] = QuietHours, ["QuietFrom"] = QuietFrom, ["QuietTo"] = QuietTo,
                 ["Glass"] = Glass, ["OutageAlerts"] = OutageAlerts, ["Corner"] = Corner, ["Expanded"] = Expanded,
-                ["ScreenX"] = ScreenX, ["ScreenY"] = ScreenY, ["LastFastDay"] = LastFastDay, ["AutoStartAsked"] = AutoStartAsked
+                ["ScreenX"] = ScreenX, ["ScreenY"] = ScreenY, ["LastFastDay"] = LastFastDay, ["AutoStartAsked"] = AutoStartAsked,
+                ["DnsGuard"] = DnsGuard, ["DnsPreset"] = DnsPreset, ["DnsP4"] = DnsP4, ["DnsS4"] = DnsS4, ["DnsP6"] = DnsP6, ["DnsS6"] = DnsS6,
+                ["DnsEncrypted"] = DnsEncrypted, ["MonthCapGB"] = MonthCapGB, ["DayCapGB"] = DayCapGB, ["CapAlerts"] = CapAlerts, ["TrayHintShown"] = TrayHintShown
             };
             Json.Save(FilePath, d);
         }
@@ -349,6 +368,22 @@ namespace Ambaan
     public static class AutoStart
     {
         const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
+        /// <summary>With DNS Guard on, Ambaan must start with admin rights: a Task Scheduler entry does that without a UAC prompt.
+        /// Otherwise a normal HKCU Run entry. Call with admin rights to switch between the two.</summary>
+        public static void Sync(Settings c)
+        {
+            try
+            {
+                bool task = c.AutoStart && c.DnsGuard;
+                if (DnsGuard.IsAdmin)
+                {
+                    if (task) DnsGuard.TaskEnable(); else if (DnsGuard.TaskExists()) DnsGuard.TaskDisable();
+                }
+                Apply(c.AutoStart && !(task && (DnsGuard.IsAdmin || DnsGuard.TaskExists())));
+            }
+            catch (Exception ex) { Log.Error("autostart sync", ex); }
+        }
+
         public static void Apply(bool on)
         {
             try

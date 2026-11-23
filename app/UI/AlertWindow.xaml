@@ -4,7 +4,7 @@
         Title="Ambaan alert" Width="290" SizeToContent="Height"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ResizeMode="NoResize" ShowInTaskbar="False" Topmost="True" ShowActivated="False"
-        FontFamily="Segoe UI" Foreground="{StaticResource Text}" UseLayoutRounding="True">
+        FontFamily="Segoe UI Variable Text, Segoe UI" Foreground="{StaticResource Text}" UseLayoutRounding="True">
     <Grid x:Name="Root" RenderTransformOrigin="0.5,1">
         <Grid.RenderTransform>
             <TransformGroup>

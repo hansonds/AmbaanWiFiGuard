@@ -273,6 +273,7 @@ namespace Ambaan
         public double RowOpacity { get; set; }
         public string Vendor { get; set; }
         public string HostName { get; set; }
+        public bool Watched { get; set; }
     }
 
     /// <summary>The device list and its alert rules. Runs on the UI thread.</summary>
@@ -289,6 +290,9 @@ namespace Ambaan
         public string GatewayMac;
         public List<DeviceRow> Devices = new List<DeviceRow>();
         public bool FirstRun, BaselineDone;
+        public HashSet<string> Watched;
+        readonly Dictionary<string, bool> home = new Dictionary<string, bool>();
+        string WatchFile => Path.Combine(Paths.Data, "WatchedDevices.json");
         public int Version;   // bumps when the list changes
 
         string KnownFile => Path.Combine(Paths.Data, "KnownDevices.json");
@@ -305,6 +309,33 @@ namespace Ambaan
             Known.Remove("00-00-00-00-00-00");
             HostNames = Json.LoadMap(HintFile);
             Own = NetUtil.OwnMacs();
+            Watched = new HashSet<string>(Json.LoadMap(WatchFile).Keys);
+        }
+
+        public void SetWatched(string mac, bool on)
+        {
+            if (on) Watched.Add(mac); else { Watched.Remove(mac); home.Remove(mac); }
+            Json.Save(WatchFile, Watched.ToDictionary(m => m, m => (object)"1"));
+            Version++; Build();
+        }
+
+        /// <summary>Watched devices: "X is home" / "X left" (gone for 10 min: phones nap, so be patient).</summary>
+        void CheckWatched(DateTime now)
+        {
+            if ((now - E.StartedAt).TotalSeconds < 90) return;   // first sweeps not done yet
+            foreach (var mac in Watched)
+            {
+                DevEntry e;
+                bool isHome = Map.TryGetValue(mac, out e) && e.LastAlive != DateTime.MinValue && (now - e.LastAlive).TotalMinutes < 10;
+                bool was;
+                if (!home.TryGetValue(mac, out was)) { home[mac] = isHome; continue; }
+                if (was == isHome) continue;
+                home[mac] = isHome;
+                string name; Known.TryGetValue(mac, out name);
+                if (string.IsNullOrEmpty(name) || name == Unnamed) name = "Watched device";
+                WriteAlert(isHome ? "Device arrived" : "Device left", name + "; MAC " + mac);
+                E.RaiseBalloon(isHome ? name + " is home" : name + " left", isHome ? name + " just joined your Wi-Fi." : name + " has not been on your Wi-Fi for 10 minutes.");
+            }
         }
 
         public void SaveKnown() { Json.Save(KnownFile, Known); }
@@ -449,6 +480,7 @@ namespace Ambaan
         public void Build()
         {
             var now = DateTime.Now;
+            try { CheckWatched(now); } catch (Exception ex) { Log.Error("watched", ex); }
             var list = new List<DeviceRow>();
             foreach (var kv in Map)
             {
@@ -467,9 +499,10 @@ namespace Ambaan
                     Title = named ? name : !string.IsNullOrEmpty(host) ? host : ven != null ? ven + " device" : "Unnamed device",
                     Sub = e.Ip + "  ·  " + (online ? Hint(mac) : "offline · last seen " + ago + " min ago"),
                 };
-                r.Dot = !online ? Ui.B("#6EA9A3D9") : r.New ? Ui.B("#FF9C9C") : !named ? Ui.B("#FFD27A") : (name.StartsWith("This PC") || name.StartsWith("Router")) ? Ui.B("#8EC5FF") : Ui.B("#7CE8B8");
-                r.Tag = r.New ? "NEW" : !named ? "name it" : "";
-                r.TagBrush = r.New ? Ui.B("#FF9C9C") : Ui.B("#8EC5FF");
+                r.Dot = !online ? Ui.B("#66A3ADBD") : r.New ? Ui.B("#FF7B7B") : !named ? Ui.B("#F5C26B") : (name.StartsWith("This PC") || name.StartsWith("Router")) ? Ui.B("#4CC2FF") : Ui.B("#5FD39A");
+                r.Watched = Watched.Contains(mac);
+                r.Tag = r.New ? "NEW" : !named ? "name it" : r.Watched ? "WATCHING" : "";
+                r.TagBrush = r.New ? Ui.B("#FF7B7B") : Ui.B("#4CC2FF");
                 r.RowOpacity = online ? 1.0 : 0.55;
                 list.Add(r);
             }

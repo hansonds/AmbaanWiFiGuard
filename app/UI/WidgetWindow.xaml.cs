@@ -36,12 +36,11 @@ namespace Ambaan
             BtnHistory2.Click += (s, e) => HistoryWindow.Open();
             BtnSettings.Click += (s, e) => SettingsWindow.Open();
             BtnExpand.Click += (s, e) => SetExpanded(!E.Cfg.Expanded);
-            BtnHide.Click += (s, e) => HideWidget();
-            BtnClose.Click += (s, e) => App.Quit();
+            BtnClose.Click += (s, e) => HideToTray();
             BtnFull.Click += (s, e) => FullTestWindow.Open();
             BtnScan.Click += (s, e) => E.RequestScan();
             BtnDnsCheck.Click += (s, e) => { E.Dns = null; E.RequestDns(); };
-            BtnDnsFix.Click += (s, e) => Dialogs.DnsFix();
+            BtnDnsFix.Click += (s, e) => Dialogs.DnsPanel();
             BtnLocation.Click += (s, e) => Ui.Open("ms-settings:privacy-location");
             ChipDevices.MouseLeftButtonUp += (s, e) => SetExpanded(true);
             ChipDns.MouseLeftButtonUp += (s, e) => SetExpanded(true);
@@ -100,6 +99,17 @@ namespace Ambaan
         }
 
         public void Toggle() { if (Shown) HideWidget(); else ShowWidget(); }
+
+        /// <summary>X keeps Ambaan running in the tray (alerts keep working). Exit is in the tray menu.</summary>
+        public void HideToTray()
+        {
+            HideWidget();
+            if (!E.Cfg.TrayHintShown)
+            {
+                E.Cfg.TrayHintShown = true; E.Cfg.Save();
+                App.TrayIcon?.Balloon("Ambaan is still watching", "It keeps running in the tray. Click the tray icon or press Ctrl+Alt+W to open it. To quit, right-click the icon > Exit.");
+            }
+        }
 
         public void SetExpanded(bool on)
         {
@@ -210,15 +220,17 @@ namespace Ambaan
                 UpText.Text = E.Up.ToString(E.Up >= 100 ? "0" : "0.0");
 
                 var rm = E.RouterMs;
-                Chip(ChipRouter, ChipRouterText, rm != null ? "Router " + rm + " ms" : "Router --", rm == null ? "#FF9C9C" : rm > 30 ? "#FFD27A" : "#7CE8B8");
+                Chip(ChipRouter, ChipRouterText, rm != null ? "Router " + rm + " ms" : "Router --", rm == null ? "#FF7B7B" : rm > 30 ? "#F5C26B" : "#5FD39A");
                 var nm = E.NetMs;
                 bool down = E.Outages.DownSince != null;
-                Chip(ChipNet, ChipNetText, down ? "Internet DOWN" : nm != null ? "Internet " + nm + " ms" : "Internet --", down || nm == null ? "#FF9C9C" : nm > 120 ? "#FFD27A" : "#7CE8B8");
+                Chip(ChipNet, ChipNetText, down ? "Internet DOWN" : nm != null ? "Internet " + nm + " ms" : "Internet --", down || nm == null ? "#FF7B7B" : nm > 120 ? "#F5C26B" : "#5FD39A");
                 var online = E.Book.Devices.Where(d => d.Online).ToList();
                 int unnamed = online.Count(d => !d.Named);
-                Chip(ChipDevices, ChipDevicesText, E.Book.Devices.Count == 0 ? "Devices ..." : unnamed > 0 ? unnamed + " unnamed" : online.Count + " online", unnamed > 0 ? "#FFD27A" : "#7CE8B8");
+                Chip(ChipDevices, ChipDevicesText, E.Book.Devices.Count == 0 ? "Devices ..." : unnamed > 0 ? unnamed + " unnamed" : online.Count + " online", unnamed > 0 ? "#F5C26B" : "#5FD39A");
                 var dn = E.Dns;
-                Chip(ChipDns, ChipDnsText, dn == null ? "DNS ..." : dn.Shield == "On" ? "Shield ON" : "Shield OFF", dn == null ? "#C2BCEB" : dn.Status == "Good" ? "#7CE8B8" : dn.Status == "Bad" ? "#FF9C9C" : "#FFD27A");
+                bool guard = E.Cfg.DnsGuard;
+                if (guard) Chip(ChipDns, ChipDnsText, E.GuardStatus == "needs admin" ? "DNS Guard: needs admin" : "DNS Guard ON", E.GuardStatus == "needs admin" ? "#F5C26B" : "#5FD39A");
+                else Chip(ChipDns, ChipDnsText, dn == null ? "DNS ..." : dn.Shield == "On" ? "Shield ON" : "Shield OFF", dn == null ? "#A3ADBD" : dn.Status == "Good" ? "#5FD39A" : dn.Status == "Bad" ? "#FF7B7B" : "#F5C26B");
                 BtnSpeed.Content = E.Speed.Busy ? "" : "";
 
                 if (More.Visibility != Visibility.Visible) return;
@@ -228,11 +240,11 @@ namespace Ambaan
                 var pad = Enumerable.Repeat((double?)null, Math.Max(0, 120 - E.DownHist.Count));
                 Traffic.MinMax = 1;
                 Traffic.Set(
-                    new ChartView.Series { Values = pad.Concat(E.DownHist.Select(v => (double?)v)).ToArray(), Color = Ui.C("#8EC5FF"), Fill = true },
-                    new ChartView.Series { Values = pad.Concat(E.UpHist.Select(v => (double?)v)).ToArray(), Color = Ui.C("#C9A7FF") });
+                    new ChartView.Series { Values = pad.Concat(E.DownHist.Select(v => (double?)v)).ToArray(), Color = Ui.C("#4CC2FF"), Fill = true },
+                    new ChartView.Series { Values = pad.Concat(E.UpHist.Select(v => (double?)v)).ToArray(), Color = Ui.C("#A5B4FC") });
 
                 TileRouter.Text = rm != null ? rm + " ms" : "--";
-                TileNet.Text = nm != null ? nm + " ms" : "--";
+                TileNet.Text = nm != null ? nm + " ms" + (E.Speed.Jitter != null ? "  ±" + E.Speed.Jitter : "") : "--";
                 TileSpeedLabel.Text = E.Speed.Busy ? "SPEED · TESTING" : "SPEED";
                 TileSpeed.Text = E.Speed.Last != null ? E.Speed.Last + " Mbps" : E.Speed.LastAt != null ? "no response" : "soon...";
                 var today = E.Usage.Day(DateTime.Today);
@@ -241,17 +253,19 @@ namespace Ambaan
                 TileUptime.Text = up != null ? up.Value.ToString(up.Value >= 99.95 ? "0" : "0.0") + "%" : "--";
                 int outs = E.Outages.CountToday() + (down ? 1 : 0);
                 TileOutages.Text = down ? "down now" : outs + " today";
-                TileOutages.Foreground = down ? Ui.B("#FF9C9C") : Ui.Res<Brush>("Text");
+                TileOutages.Foreground = down ? Ui.B("#FF7B7B") : Ui.Res<Brush>("Text");
 
                 LocationHint.Visibility = w.LocationBlocked ? Visibility.Visible : Visibility.Collapsed;
 
+                DnsTitle.Text = guard ? "DNS GUARD · " + E.Cfg.DnsPreset.ToUpperInvariant() : "DNS SHIELD";
                 if (dn != null)
                 {
-                    DnsDot.Fill = dn.Status == "Good" ? Ui.B("#7CE8B8") : dn.Status == "Bad" ? Ui.B("#FF9C9C") : Ui.B("#FFD27A");
+                    DnsDot.Fill = dn.Status == "Good" ? Ui.B("#5FD39A") : dn.Status == "Bad" ? Ui.B("#FF7B7B") : Ui.B("#F5C26B");
                     DnsHead.Text = dn.Headline;
                     DnsDetail.Text = dn.Issues.Count > 0 ? dn.Issues[0] : dn.Detail;
                     DnsChecked.Text = E.DnsBusy ? "CHECKING..." : "CHECKED " + dn.CheckedAt.ToString("HH:mm");
-                    BtnDnsFix.Content = dn.Status == "Good" ? "Change" : "Fix it";
+                    BtnDnsFix.Content = guard || dn.Status == "Good" ? "Change" : "Fix it";
+                    if (guard && E.GuardStatus == "needs admin") { DnsHead.Text = "DNS Guard needs admin rights"; DnsDetail.Text = "Open Change and press Apply once. After that it starts with admin rights at sign-in."; }
                 }
                 else { DnsHead.Text = "Checking DNS servers..."; DnsDetail.Text = ""; DnsChecked.Text = ""; }
 

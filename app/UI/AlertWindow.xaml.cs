@@ -126,25 +126,25 @@ namespace Ambaan
             if (kind == "New" || kind == "Unnamed")
             {
                 var d = E.Book.Row(mac ?? "");
-                accent = kind == "New" ? "#FF9C9C" : "#FFD27A";
+                accent = kind == "New" ? "#FF7B7B" : "#F5C26B";
                 Title1.Text = kind == "New" ? "New device on your Wi-Fi!" : "Unknown device is back!";
                 Big.Visibility = Visibility.Collapsed;
                 Line.Text = (!string.IsNullOrEmpty(d.HostName) ? d.HostName + "  ·  " : "") + d.Ip;
                 Detail.Text = d.Vendor != null ? "Made by " + d.Vendor + "  ·  " + d.Mac : NetUtil.IsRandomMac(d.Mac) ? "Private address (phone or laptop)  ·  " + d.Mac : d.Mac;
-                Set(Btn1, "It's mine", "#607CE8B8", () => { string m = mac; CloseAlert(); Dialogs.Device(m); });
-                Set(Btn2, "Block...", "#60FF9C9C", () => Dialogs.BlockHelp(mac));
+                Set(Btn1, "It's mine", "#80268A5B", () => { string m = mac; CloseAlert(); Dialogs.Device(m); });
+                Set(Btn2, "Block...", "#80B5444B", () => Dialogs.BlockHelp(mac));
             }
             else
             {
                 var sp = E.Speed;
-                accent = kind == "Fast" ? "#7CE8B8" : kind == "Slow" ? "#8EC5FF" : "#C9A7FF";
+                accent = kind == "Fast" ? "#5FD39A" : kind == "Slow" ? "#4CC2FF" : "#A5B4FC";
                 Title1.Text = kind == "Fast" ? "Wi-Fi is flying today!" : kind == "Ok" ? "Speed is OK, not super fast" : "Wi-Fi is slow again!";
                 Big.Text = sp.Last != null ? sp.Last + " Mbps" : "No internet";
                 Line.Visibility = Visibility.Collapsed;
                 Detail.Text = sp.Diag + (sp.Usual != null && kind == "Slow" ? "  Usual: " + sp.Usual + " Mbps." : "");
-                if (kind == "Slow") Set(Btn1, "Full test", "#60C9A7FF", () => { CloseAlert(); FullTestWindow.Open(); });
-                else Set(Btn1, "Test again", "#60C9A7FF", () => { CloseAlert(); E.StartSpeedTest(true); });
-                Set(Btn2, "OK", "#608EC5FF", CloseAlert);
+                if (kind == "Slow") Set(Btn1, "Full test", "#2EFFFFFF", () => { CloseAlert(); FullTestWindow.Open(); });
+                else Set(Btn1, "Test again", "#2EFFFFFF", () => { CloseAlert(); E.StartSpeedTest(true); });
+                Set(Btn2, "OK", "#D01A73B8", CloseAlert);
             }
             Accent.Background = Ui.B(accent);
             Title1.Foreground = Ui.B(accent);

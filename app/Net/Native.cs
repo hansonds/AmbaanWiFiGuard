@@ -368,6 +368,28 @@ namespace Ambaan
             return d;
         }
 
+        /// <summary>Wake-on-LAN magic packet: 6 x FF then the MAC 16 times, broadcast on UDP 9 and 7.</summary>
+        public static bool WakeOnLan(string mac, Primary pr)
+        {
+            try
+            {
+                var m = mac.Split('-', ':').Select(x => Convert.ToByte(x, 16)).ToArray();
+                if (m.Length != 6) return false;
+                var pkt = new byte[102];
+                for (int i = 0; i < 6; i++) pkt[i] = 0xFF;
+                for (int i = 0; i < 16; i++) Array.Copy(m, 0, pkt, 6 + i * 6, 6);
+                using (var u = new UdpClient())
+                {
+                    u.EnableBroadcast = true;
+                    var targets = new List<IPAddress> { IPAddress.Broadcast };
+                    if (pr != null) targets.Add(IPAddress.Parse(pr.Prefix24 + "255"));
+                    foreach (var t in targets) { u.Send(pkt, pkt.Length, new IPEndPoint(t, 9)); u.Send(pkt, pkt.Length, new IPEndPoint(t, 7)); }
+                }
+                return true;
+            }
+            catch (Exception ex) { Log.Error("wol", ex); return false; }
+        }
+
         public static string Size(double bytes)
         {
             if (bytes >= 1e9) return (bytes / 1e9).ToString("0.00") + " GB";

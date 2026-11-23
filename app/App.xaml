@@ -3,48 +3,48 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
-        <SolidColorBrush x:Key="Text" Color="#F7F5FF"/>
-        <SolidColorBrush x:Key="Muted" Color="#C2BCEB"/>
-        <SolidColorBrush x:Key="Sky" Color="#8EC5FF"/>
-        <SolidColorBrush x:Key="Lilac" Color="#C9A7FF"/>
-        <SolidColorBrush x:Key="Green" Color="#7CE8B8"/>
-        <SolidColorBrush x:Key="Amber" Color="#FFD27A"/>
-        <SolidColorBrush x:Key="Red" Color="#FF9C9C"/>
-        <SolidColorBrush x:Key="CardBg" Color="#1CFFFFFF"/>
-        <SolidColorBrush x:Key="CardHover" Color="#30FFFFFF"/>
+        <SolidColorBrush x:Key="Text" Color="#F2F5F9"/>
+        <SolidColorBrush x:Key="Muted" Color="#A3ADBD"/>
+        <SolidColorBrush x:Key="Sky" Color="#4CC2FF"/>
+        <SolidColorBrush x:Key="Lilac" Color="#A5B4FC"/>
+        <SolidColorBrush x:Key="Green" Color="#5FD39A"/>
+        <SolidColorBrush x:Key="Amber" Color="#F5C26B"/>
+        <SolidColorBrush x:Key="Red" Color="#FF7B7B"/>
+        <SolidColorBrush x:Key="CardBg" Color="#10FFFFFF"/>
+        <SolidColorBrush x:Key="CardHover" Color="#1CFFFFFF"/>
 
-        <!-- glass: see-through tinted gradient + a bright top edge, like frosted glass -->
-        <LinearGradientBrush x:Key="GlassFill" StartPoint="0,0" EndPoint="0.8,1">
-            <GradientStop Color="#B8221C4E" Offset="0"/>
-            <GradientStop Color="#B0181538" Offset="0.55"/>
-            <GradientStop Color="#C02A2163" Offset="1"/>
+        <!-- professional glass: graphite tint over a real blur, hairline light edge, faint top sheen -->
+        <LinearGradientBrush x:Key="GlassFill" StartPoint="0,0" EndPoint="0.6,1">
+            <GradientStop Color="#A6141922" Offset="0"/>
+            <GradientStop Color="#B0161C27" Offset="0.6"/>
+            <GradientStop Color="#BA19202D" Offset="1"/>
         </LinearGradientBrush>
-        <LinearGradientBrush x:Key="GlassFillSolid" StartPoint="0,0" EndPoint="0.8,1">
-            <GradientStop Color="#FA221C4E" Offset="0"/>
-            <GradientStop Color="#FA181538" Offset="0.55"/>
-            <GradientStop Color="#FC2A2163" Offset="1"/>
+        <LinearGradientBrush x:Key="GlassFillSolid" StartPoint="0,0" EndPoint="0.6,1">
+            <GradientStop Color="#F7141922" Offset="0"/>
+            <GradientStop Color="#F7161C27" Offset="0.6"/>
+            <GradientStop Color="#F819202D" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="GlassEdge" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#70FFFFFF" Offset="0"/>
-            <GradientStop Color="#22FFFFFF" Offset="0.35"/>
-            <GradientStop Color="#14FFFFFF" Offset="1"/>
+            <GradientStop Color="#5CFFFFFF" Offset="0"/>
+            <GradientStop Color="#1CFFFFFF" Offset="0.25"/>
+            <GradientStop Color="#0FFFFFFF" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="Shine" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#26FFFFFF" Offset="0"/>
+            <GradientStop Color="#16FFFFFF" Offset="0"/>
             <GradientStop Color="#00FFFFFF" Offset="1"/>
         </LinearGradientBrush>
 
         <Style x:Key="GlassShell" TargetType="Border">
-            <Setter Property="CornerRadius" Value="18"/>
+            <Setter Property="CornerRadius" Value="16"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="BorderBrush" Value="{StaticResource GlassEdge}"/>
             <Setter Property="Background" Value="{StaticResource GlassFill}"/>
         </Style>
 
         <Style x:Key="Card" TargetType="Border">
-            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Background" Value="{StaticResource CardBg}"/>
-            <Setter Property="BorderBrush" Value="#1EFFFFFF"/>
+            <Setter Property="BorderBrush" Value="#14FFFFFF"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="12,9"/>
         </Style>
@@ -58,10 +58,10 @@
 
         <Style x:Key="Pill" TargetType="Button">
             <Setter Property="Foreground" Value="{StaticResource Text}"/>
-            <Setter Property="Background" Value="#405B4BC4"/>
+            <Setter Property="Background" Value="#1FFFFFFF"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="12.5"/>
-            <Setter Property="Height" Value="34"/>
+            <Setter Property="Height" Value="32"/>
             <Setter Property="Padding" Value="12,0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Focusable" Value="False"/>
@@ -69,12 +69,12 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Grid>
-                            <Border CornerRadius="11" Background="{TemplateBinding Background}" BorderBrush="#30FFFFFF" BorderThickness="1"/>
-                            <Border x:Name="hl" CornerRadius="11" Background="#00FFFFFF"/>
+                            <Border CornerRadius="9" Background="{TemplateBinding Background}" BorderBrush="#24FFFFFF" BorderThickness="1"/>
+                            <Border x:Name="hl" CornerRadius="9" Background="#00FFFFFF"/>
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True"/>
                         </Grid>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="hl" Property="Background" Value="#26FFFFFF"/></Trigger>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="hl" Property="Background" Value="#1AFFFFFF"/></Trigger>
                             <Trigger Property="IsPressed" Value="True"><Setter TargetName="hl" Property="Background" Value="#14000000"/></Trigger>
                             <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger>
                         </ControlTemplate.Triggers>
@@ -85,7 +85,7 @@
 
         <Style x:Key="IconBtn" TargetType="Button">
             <Setter Property="Foreground" Value="{StaticResource Muted}"/>
-            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Width" Value="28"/>
             <Setter Property="Height" Value="28"/>
@@ -122,7 +122,7 @@
                             <ContentPresenter/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="Background" Value="#228EC5FF"/></Trigger>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="Background" Value="#224CC2FF"/></Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -130,13 +130,13 @@
         </Style>
 
         <Style x:Key="RowCard" TargetType="Border">
-            <Setter Property="CornerRadius" Value="11"/>
-            <Setter Property="Background" Value="#14FFFFFF"/>
+            <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="Background" Value="#0DFFFFFF"/>
             <Setter Property="Margin" Value="0,0,0,5"/>
             <Setter Property="Padding" Value="11,6"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#2CFFFFFF"/></Trigger>
+                <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#1CFFFFFF"/></Trigger>
             </Style.Triggers>
         </Style>
 

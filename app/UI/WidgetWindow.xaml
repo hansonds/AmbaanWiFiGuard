@@ -5,7 +5,7 @@
         Title="Ambaan WiFi Guard" Width="352" SizeToContent="Height"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ResizeMode="NoResize" ShowInTaskbar="False" Topmost="True" ShowActivated="False"
-        FontFamily="Segoe UI" Foreground="{StaticResource Text}" UseLayoutRounding="True" Opacity="0">
+        FontFamily="Segoe UI Variable Text, Segoe UI" Foreground="{StaticResource Text}" UseLayoutRounding="True" Opacity="0">
     <Border x:Name="Shell" Style="{StaticResource GlassShell}">
         <Grid>
             <!-- soft shine on the top half, like light on glass -->
@@ -18,8 +18,7 @@
                         <Button x:Name="BtnHistory" Style="{StaticResource IconBtn}" Content="&#xE9D2;" ToolTip="History and tools"/>
                         <Button x:Name="BtnSettings" Style="{StaticResource IconBtn}" Content="&#xE713;" ToolTip="Settings"/>
                         <Button x:Name="BtnExpand" Style="{StaticResource IconBtn}" Content="&#xE70D;" ToolTip="Show more"/>
-                        <Button x:Name="BtnHide" Style="{StaticResource IconBtn}" Content="&#xE921;" ToolTip="Hide (Ctrl+Alt+W)"/>
-                        <Button x:Name="BtnClose" Style="{StaticResource IconBtn}" Content="&#xE8BB;" ToolTip="Close Ambaan"/>
+                        <Button x:Name="BtnClose" Style="{StaticResource IconBtn}" Content="&#xE8BB;" ToolTip="Hide to the tray (Ctrl+Alt+W). Exit from the tray menu."/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Image x:Name="Logo" Width="16" Height="16" Margin="0,0,6,0"/>
@@ -38,8 +37,8 @@
                         <Path x:Name="GaugeValue" StrokeThickness="8" StrokeStartLineCap="Round" StrokeEndLineCap="Round">
                             <Path.Stroke>
                                 <LinearGradientBrush StartPoint="0,1" EndPoint="1,0">
-                                    <GradientStop Color="#8EC5FF" Offset="0"/>
-                                    <GradientStop Color="#C9A7FF" Offset="1"/>
+                                    <GradientStop Color="#4CC2FF" Offset="0"/>
+                                    <GradientStop Color="#A5B4FC" Offset="1"/>
                                 </LinearGradientBrush>
                             </Path.Stroke>
                         </Path>
@@ -92,7 +91,7 @@
                         <Border Style="{StaticResource Card}" Margin="4,0,0,0"><StackPanel><TextBlock Style="{StaticResource Label}" Text="OUTAGES"/><TextBlock x:Name="TileOutages" FontSize="14" FontWeight="SemiBold" Text="0 today" TextTrimming="CharacterEllipsis"/></StackPanel></Border>
                     </UniformGrid>
 
-                    <Border x:Name="LocationHint" Style="{StaticResource Card}" Margin="0,8,0,0" Background="#26FFD27A" Visibility="Collapsed">
+                    <Border x:Name="LocationHint" Style="{StaticResource Card}" Margin="0,8,0,0" Background="#26F5C26B" Visibility="Collapsed">
                         <DockPanel>
                             <Button x:Name="BtnLocation" DockPanel.Dock="Right" Style="{StaticResource LinkBtn}" Content="Open settings" VerticalAlignment="Center"/>
                             <TextBlock TextWrapping="Wrap" FontSize="11.5" Text="Windows hides the Wi-Fi name and nearby networks until Location is on for desktop apps."/>
@@ -105,7 +104,7 @@
                             <StackPanel>
                                 <DockPanel>
                                     <TextBlock x:Name="DnsChecked" DockPanel.Dock="Right" Style="{StaticResource Label}" Text=""/>
-                                    <TextBlock Style="{StaticResource Label}" Text="DNS SHIELD"/>
+                                    <TextBlock x:Name="DnsTitle" Style="{StaticResource Label}" Text="DNS SHIELD"/>
                                 </DockPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                     <Ellipse x:Name="DnsDot" Width="9" Height="9" Fill="{StaticResource Muted}" Margin="0,0,7,0" VerticalAlignment="Center"/>
@@ -114,8 +113,8 @@
                                 <TextBlock x:Name="DnsDetail" FontSize="11" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,3,8,0" MaxHeight="45" TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
-                                <Button x:Name="BtnDnsFix" Style="{StaticResource Pill}" Content="Fix it" Height="30" Background="#50C9A7FF"/>
-                                <Button x:Name="BtnDnsCheck" Style="{StaticResource Pill}" Content="&#xE72C;" FontFamily="Segoe MDL2 Assets" Height="30" Padding="10,0" Margin="6,0,0,0" Background="#408EC5FF" ToolTip="Check again"/>
+                                <Button x:Name="BtnDnsFix" Style="{StaticResource Pill}" Content="Fix it" Height="30" Background="#2EFFFFFF"/>
+                                <Button x:Name="BtnDnsCheck" Style="{StaticResource Pill}" Content="&#xE72C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Height="30" Padding="10,0" Margin="6,0,0,0" Background="#2EFFFFFF" ToolTip="Check again"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -153,9 +152,9 @@
                     <TextBlock x:Name="NoDevices" Text="Looking for devices..." FontSize="12" Foreground="{StaticResource Muted}" Margin="2,4,0,0" Visibility="Collapsed"/>
 
                     <UniformGrid Columns="3" Margin="0,12,0,0">
-                        <Button x:Name="BtnSpeed2" Style="{StaticResource Pill}" Content="Speed test" Background="#507CE8B8" Margin="0,0,4,0"/>
-                        <Button x:Name="BtnFull" Style="{StaticResource Pill}" Content="Full test" Background="#50C9A7FF" Margin="4,0,4,0"/>
-                        <Button x:Name="BtnHistory2" Style="{StaticResource Pill}" Content="History" Background="#508EC5FF" Margin="4,0,0,0"/>
+                        <Button x:Name="BtnSpeed2" Style="{StaticResource Pill}" Content="Speed test" Background="#D01A73B8" Margin="0,0,4,0"/>
+                        <Button x:Name="BtnFull" Style="{StaticResource Pill}" Content="Full test" Background="#2EFFFFFF" Margin="4,0,4,0"/>
+                        <Button x:Name="BtnHistory2" Style="{StaticResource Pill}" Content="History" Background="#2EFFFFFF" Margin="4,0,0,0"/>
                     </UniformGrid>
                 </StackPanel>
             </StackPanel>

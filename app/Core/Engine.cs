@@ -16,7 +16,7 @@ namespace Ambaan
         public bool Busy, Manual, PingBusy, WasSlow;
         public DateTime NextTest = DateTime.Now.AddMinutes(2), NextPing = DateTime.Now.AddSeconds(30), LastAlert = DateTime.MinValue;
         public int SlowCount;
-        public int? PingAvg, PingLoss;
+        public int? PingAvg, PingLoss, Jitter;
         public string Diag = "", Via = "";
     }
 
@@ -41,7 +41,10 @@ namespace Ambaan
         public readonly SpeedState Speed = new SpeedState();
         public DateTime QuietRejoinUntil = DateTime.MinValue;
         DispatcherTimer timer; int tick;
+        DateTime guardDue = DateTime.Now.AddSeconds(3); bool guardBusy;
+        public string GuardStatus = "";
         public bool Running;
+        public DateTime StartedAt = DateTime.Now;
 
         public event Action Changed;
         public event Action<string, string> AlertRaised;   // kind, mac
@@ -53,17 +56,18 @@ namespace Ambaan
             Book = new DeviceBook(this);
             Outages = new OutageTracker();
             Usage = new UsageTracker();
-            AutoStart.Apply(Cfg.AutoStart);
+            AutoStart.Sync(Cfg);
             Primary = NetUtil.GetPrimary();
             if (Primary != null) Watch.Prefix = Primary.Prefix24;
             SystemEvents.PowerModeChanged += OnPower;
-            NetworkChange.NetworkAddressChanged += (s, e) => netChanged = true;
+            NetworkChange.NetworkAddressChanged += (s, e) => { netChanged = true; guardDue = DateTime.Now.AddSeconds(4); };
+            NetworkChange.NetworkAvailabilityChanged += (s, e) => { guardDue = DateTime.Now.AddSeconds(4); };
         }
 
         public void Start()
         {
             if (Running) return;
-            Running = true;
+            Running = true; StartedAt = DateTime.Now;
             Watch.Start();
             timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             timer.Tick += (s, e) => Tick();
@@ -87,7 +91,7 @@ namespace Ambaan
                     lastCounters = null; Usage.Reset();
                     QuietRejoinUntil = DateTime.Now.AddMinutes(2);   // devices look "back" after sleep: don't shout about them
                     Speed.NextTest = DateTime.Now.AddMinutes(1); Speed.SlowCount = 0;
-                    netChanged = true;
+                    netChanged = true; guardDue = DateTime.Now.AddSeconds(5);
                 }
             }
             catch (Exception ex) { Log.Error("power", ex); }
@@ -121,7 +125,48 @@ namespace Ambaan
             if (tick % 20 == 0) Safe("build", Book.Build);   // ages online -> offline
             if (now >= scanDue) { scanDue = now.AddSeconds(20); RequestScan(); }
             if (now >= dnsDue) { dnsDue = now.AddMinutes(10); RequestDns(); }
+            if (now >= guardDue) { guardDue = now.AddMinutes(5); GuardCheck(false); }
+            if (tick % 60 == 30) Safe("data limit", CheckDataLimit);
             try { Changed?.Invoke(); } catch (Exception ex) { Log.Error("ui refresh", ex); }
+        }
+
+        /// <summary>DNS Guard: put the chosen DNS back if Windows or the network changed it.</summary>
+        public async void GuardCheck(bool force)
+        {
+            if (!Cfg.DnsGuard || guardBusy) return;
+            if (!DnsGuard.IsAdmin) { GuardStatus = "needs admin"; return; }
+            guardBusy = true;
+            try
+            {
+                var c = Cfg;
+                int n = await Task.Run(() => DnsGuard.Apply(c, force));
+                GuardStatus = "on";
+                if (n > 0) { Book.WriteAlert("DNS Guard", "Re-applied " + c.DnsPreset + " (" + n + " change)"); Dns = null; dnsDue = DateTime.Now.AddSeconds(3); }
+            }
+            catch (Exception ex) { Log.Error("dns guard", ex); }
+            finally { guardBusy = false; }
+        }
+
+        void CheckDataLimit()
+        {
+            var c = Cfg;
+            var day = Usage.Day(DateTime.Today); var mon = Usage.Month();
+            string dKey = "D" + DateTime.Today.ToString("yyyyMMdd") + "-", mKey = "M" + DateTime.Today.ToString("yyyyMM") + "-";
+            var marks = new HashSet<string>(c.CapAlerts.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith(dKey) || x.StartsWith(mKey)));
+            bool changed = false;
+            foreach (var t in new[] { Tuple.Create(dKey, (day[0] + day[1]) / 1e9, c.DayCapGB, "Today's"), Tuple.Create(mKey, (mon[0] + mon[1]) / 1e9, c.MonthCapGB, "This month's") })
+            {
+                double used = t.Item2, cap = t.Item3;
+                if (cap <= 0) continue;
+                int lvl = used >= cap ? 100 : used >= cap * 0.8 ? 80 : 0;
+                if (lvl == 0 || marks.Contains(t.Item1 + lvl)) continue;
+                marks.Add(t.Item1 + lvl); if (lvl == 100) marks.Add(t.Item1 + "80");
+                changed = true;
+                string msg = t.Item4 + " data: " + used.ToString("0.0") + " GB of " + cap.ToString("0.#") + " GB used" + (lvl == 100 ? ". Limit reached." : " (80%).");
+                Book.WriteAlert("Data limit", msg);
+                RaiseBalloon(lvl == 100 ? "Data limit reached" : "Data limit almost reached", msg);
+            }
+            if (changed) { c.CapAlerts = string.Join(";", marks) + ";"; c.Save(); }
         }
 
         async void UpdateWifi()
@@ -236,13 +281,15 @@ namespace Ambaan
             if (sp.PingBusy) return; sp.PingBusy = true;
             try
             {
-                int ok = 0; long sum = 0;
+                var got = new List<int>();
                 for (int i = 0; i < 4; i++)
                 {
                     var ms = await NetUtil.PingMs("1.1.1.1", 1000);
-                    if (ms != null) { ok++; sum += ms.Value; }
+                    if (ms != null) got.Add(ms.Value);
                 }
-                sp.PingLoss = (4 - ok) * 25; sp.PingAvg = ok > 0 ? (int)(sum / ok) : (int?)null;
+                int ok = got.Count;
+                sp.PingLoss = (4 - ok) * 25; sp.PingAvg = ok > 0 ? (int)got.Average() : (int?)null;
+                sp.Jitter = ok > 1 ? (int)Math.Round(Enumerable.Range(1, ok - 1).Average(i => Math.Abs(got[i] - got[i - 1]))) : (int?)null;
                 if ((sp.PingLoss >= 50 || (sp.PingAvg ?? 0) > 250) && DateTime.Now < sp.NextTest) sp.NextTest = DateTime.Now;   // looks bad: test now
             }
             catch (Exception ex) { Log.Error("ping probe", ex); }
