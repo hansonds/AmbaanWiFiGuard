@@ -100,20 +100,15 @@ namespace Ambaan
             radios.Add(custom); list.Children.Add(custom);
             foreach (var tb in new[] { p4, s4, p6, s6 }) { tb.FontSize = 12.5; tb.TextChanged += (s, e) => { if (!filling && tb.IsKeyboardFocused) custom.IsChecked = true; }; }
             body.Children.Add(list);
-            var grid = new Grid { Margin = new Thickness(0, 8, 0, 0) };
-            for (int i = 0; i < 2; i++) grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            Action<string, UIElement, int, int> place = (lbl, el, row, col) =>
+            var grid = new System.Windows.Controls.Primitives.UniformGrid { Columns = 2, Margin = new Thickness(0, 8, -10, 0) };
+            foreach (var pair in new[] { Tuple.Create("IPv4 primary", p4), Tuple.Create("IPv4 secondary", s4), Tuple.Create("IPv6 primary", p6), Tuple.Create("IPv6 secondary", s6) })
             {
-                while (grid.RowDefinitions.Count <= row) grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                var l = Ui.Text(lbl, 11.5, "#A3ADBD"); l.Margin = new Thickness(0, 4, 8, 0); l.VerticalAlignment = VerticalAlignment.Center;
-                Grid.SetRow(l, row); Grid.SetColumn(l, col * 2); grid.Children.Add(l);
-                if (el is FrameworkElement fe) fe.Margin = new Thickness(0, 4, 14, 0);
-                Grid.SetRow(el, row); Grid.SetColumn(el, col * 2 + 1); grid.Children.Add(el);
-            };
-            place("IPv4 primary", p4, 0, 0); place("secondary", s4, 0, 1);
-            place("IPv6 primary", p6, 1, 0); place("secondary", s6, 1, 1);
+                var cell = new StackPanel { Margin = new Thickness(0, 4, 10, 0) };
+                cell.Children.Add(Ui.Text(pair.Item1, 11, "#A3ADBD"));
+                pair.Item2.Width = double.NaN; pair.Item2.HorizontalAlignment = HorizontalAlignment.Stretch; pair.Item2.Margin = new Thickness(0, 2, 0, 0);
+                cell.Children.Add(pair.Item2);
+                grid.Children.Add(cell);
+            }
             body.Children.Add(grid);
             var doh = Ui.Check("Encrypted DNS (DNS-over-HTTPS, Windows 11)", c.DnsEncrypted); body.Children.Add(doh);
 
@@ -163,7 +158,7 @@ namespace Ambaan
                     w.Close();
                 }
             });
-            var off = Ui.Btn("Turn off (automatic DNS)", "#1FFFFFFF", async () =>
+            var off = Ui.Btn("Turn off", "#1FFFFFFF", async () =>
             {
                 c.DnsGuard = false; c.Save(); E.GuardStatus = "";
                 if (DnsGuard.IsAdmin) await Task.Run(() => { DnsGuard.Reset(); AutoStart.Sync(c); });
@@ -172,6 +167,7 @@ namespace Ambaan
                 E.Dns = null; E.RequestDns();
                 w.Close();
             });
+            off.ToolTip = "Stop DNS Guard and go back to automatic DNS from the router";
             body.Children.Add(Ui.Buttons(apply, off, Ui.Btn("Cancel", "#1FFFFFFF", () => w.Close())));
 
             var results = new StackPanel();
