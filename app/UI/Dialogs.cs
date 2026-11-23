@@ -331,7 +331,7 @@ namespace Ambaan
             var capD = Ui.Input(c.DayCapGB.ToString("0.#"), 80); var capM = Ui.Input(c.MonthCapGB.ToString("0.#"), 80);
             body.Children.Add(Ui.Row(Ui.Text("Warn me when today's data passes (GB)"), capD, 2));
             body.Children.Add(Ui.Row(Ui.Text("Warn me when this month's data passes (GB)"), capM));
-            var dnsBtn = Ui.Btn("DNS and DNS Guard...", "#2EFFFFFF", () => DnsPanel()); dnsBtn.Margin = new Thickness(0, 14, 0, 0);
+            var dnsBtn = Ui.Btn("DNS and DNS Guard...", "#2EFFFFFF", () => Dialogs.DnsPanel()); dnsBtn.Margin = new Thickness(0, 14, 0, 0);
             body.Children.Add(dnsBtn);
 
             var err = Ui.Text("", 12, "#FF7B7B", false, true); err.Margin = new Thickness(0, 6, 0, 0); body.Children.Add(err);
